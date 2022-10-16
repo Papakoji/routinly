@@ -15,6 +15,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 
 app.use("/api/v1/auth", authRoutes);
+// app.use("/api/v1/routine", routineRoutes);
 app.use(routeNotFound);
 app.use(errorHandlerMiddleware);
 

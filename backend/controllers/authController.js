@@ -3,6 +3,7 @@ const asyncWrapper = require("../middleware/asyncWrapper");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const CustomError = require("../errors/customError");
+const nodemailer = require("nodemailer");
 
 const authRegistration = asyncWrapper(async (req, res, next) => {
   req.body.password = await bcrypt.hash(req.body.password, 10);
@@ -11,7 +12,7 @@ const authRegistration = asyncWrapper(async (req, res, next) => {
     success: true,
     data: "User was successfully registered",
   });
-})
+});
 
 const authLogin = asyncWrapper(async (req, res, next) => {
   const { username, password } = req.body;
@@ -38,7 +39,7 @@ const authLogin = asyncWrapper(async (req, res, next) => {
   } else {
     return next(new CustomError("Invalid Username/Password", 403));
   }
-})
+});
 
 const authForgotPass = async (req, res, next) => {
   const { email } = req.body;
@@ -64,8 +65,38 @@ const authForgotPass = async (req, res, next) => {
       }
     );
     const link = `http://localhost:3000/api/v1/auth/reset-pass/${oldUser._id}/${token}`;
-    console.log(link);
-  } catch (error) {}
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "routinlyiwp@gmail.com",
+        pass: "lqlblyljzfdpaatj",
+      },
+    });
+
+    var mailOptions = {
+      from: "routinlyiwp@gmail.com",
+      to: "raajzz109109@gmail.com",
+      subject: "Your password reset link for routinly is here!",
+      text: link,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+    res.status(200).json({
+      success: true,
+      message: "Mail sent successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred. Please try again.",
+    });
+  }
 };
 
 const authResetPass = async (req, res, next) => {
@@ -86,7 +117,7 @@ const authResetPass = async (req, res, next) => {
       const verify = jwt.verify(token, secret);
       res.render("index", {
         email: verify.email,
-        verified: "",
+        status: "verified",
       });
     } catch (error) {
       res.status(500).json({
@@ -125,7 +156,7 @@ const authResetPass = async (req, res, next) => {
       );
       res.render("index", {
         email: verify.email,
-        verified: "true",
+        status: "verified",
       });
     } catch (error) {
       console.log(error);
