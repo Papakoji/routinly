@@ -18,7 +18,17 @@ const UserSchema = new mongoose.Schema({
   gender: {
     type: String,
     required: [true, "gender is a required field"]
+  },
+  email: {
+    type: String,
+    required: [true, "email is a required field"]
+  },
+  number: {
+    type: Number,
+    required: [true, "number is a required field"]
   }
 });
+// email
+// phone number
 
 module.exports = mongoose.model("User", UserSchema);
