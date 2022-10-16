@@ -40,10 +40,100 @@ const authLogin = asyncWrapper(async (req, res, next) => {
   }
 })
 
-const authForgotPass = (req, res, next) => {
-  res.json({
-    msg: true
-  })
-}
+const authForgotPass = async (req, res, next) => {
+  const { email } = req.body;
+  try {
+    const oldUser = await User.findOne({
+      email,
+    });
+    if (!oldUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const secret = process.env.JWT_SECRET + oldUser.password;
+    const token = jwt.sign(
+      {
+        email: oldUser.email,
+        id: oldUser._id,
+      },
+      secret,
+      {
+        expiresIn: "5m",
+      }
+    );
+    const link = `http://localhost:3000/api/v1/auth/reset-pass/${oldUser._id}/${token}`;
+    console.log(link);
+  } catch (error) {}
+};
 
-module.exports = {authLogin, authRegistration, authForgotPass}
+const authResetPass = async (req, res, next) => {
+  console.log(req.method);
+  if (req.method === "GET") {
+    const { id, token } = req.params;
+    const oldUser = await User.findOne({
+      _id: id,
+    });
+    if (!oldUser) {
+      return res.json({
+        success: false,
+        message: "User does not exist",
+      });
+    }
+    const secret = process.env.JWT_SECRET + oldUser.password;
+    try {
+      const verify = jwt.verify(token, secret);
+      res.render("index", {
+        email: verify.email,
+        verified: "",
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "User is not verified",
+      });
+    }
+  } else {
+    const { id, token } = req.params;
+    const { password } = req.body;
+    console.log(password);
+    const oldUser = await User.findOne({
+      _id: id,
+    });
+
+    if (!oldUser) {
+      return res.status(404).json({
+        success: true,
+        status: "User does not exists",
+      });
+    }
+    const secret = process.env.JWT_SECRET + oldUser.password;
+    try {
+      const verify = jwt.verify(token, secret);
+      const encryptedPassword = await bcrypt.hash(password, 10);
+      console.log(encryptedPassword);
+      await User.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: {
+            password: encryptedPassword,
+          },
+        }
+      );
+      res.render("index", {
+        email: verify.email,
+        verified: "true",
+      });
+    } catch (error) {
+      console.log(error);
+      res.json({
+        status: "Something went wrong",
+      });
+    }
+  }
+};
+
+module.exports = { authLogin, authRegistration, authForgotPass, authResetPass };

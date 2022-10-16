@@ -13,20 +13,17 @@ const UserSchema = new mongoose.Schema({
   },
   age: {
     type: Number,
-    required: [true, "age is a required field"]
-  },
-  gender: {
-    type: String,
-    required: [true, "gender is a required field"]
+    required: [true, "age is a required field"],
   },
   email: {
     type: String,
-    required: [true, "email is a required field"]
+    required: [true, "email is a required field"],
+    unique: true,
   },
   number: {
     type: Number,
-    required: [true, "number is a required field"]
-  }
+    required: [true, "number is a required field"],
+  },
 });
 // email
 // phone number
